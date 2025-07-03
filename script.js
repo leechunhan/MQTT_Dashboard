@@ -1,5 +1,6 @@
 //const mqttBroker = 'ws://localhost:8080';
-const mqttBroker = 'ws://test.mosquitto.org:8080';
+//const mqttBroker = 'ws://test.mosquitto.org:8080';
+const mqttBroker = 'wss://broker.hivemq.com:8884/mqtt';
 const topic = 'sensors/data';
 
 const client = mqtt.connect(mqttBroker);
