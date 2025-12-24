@@ -4,166 +4,107 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TOX® Real-Time Dashboard</title>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Arial', sans-serif;
-      background-color: #b2f0e8;
+      font-family: Arial, sans-serif;
+      background: #b2f0e8;
       text-align: center;
+      margin: 0;
     }
-
-    h1, h2 {
-      margin: 10px 0;
-    }
-
-    #chartContainer {
-      width: 100%;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-
-    canvas {
-      width: 100% !important;
-      height: auto !important;
-    }
-
-    .reading {
-      font-size: 1.2rem;
-      margin-bottom: 10px;
-    }
-
-    .logo {
-      font-size: 2rem;
-    }
+    .logo { font-size: 1.8rem; margin-top: 10px; }
+    .counter { font-size: 1.2rem; }
+    canvas { max-width: 100%; }
   </style>
-
-
-
-</script>
-
-
 </head>
 
 <body>
 
   <div class="logo">⚙️ <strong>TOX® PRESSOTECHNIK</strong></div>
-  <h2>E-DriveCore Real-Time Data<br>
-  <div class="counter">Total Cycles: <span id="totalCount">0</span></div>
-  <div class="counter ok">OK Count: <span id="okCount">0</span></div>
-  <div class="counter ng">NG Count: <span id="ngCount">0</span></div>
-  <br>
-    
-   
-  <div class="reading" id="readings">
-    Distance: -- mm &nbsp; | &nbsp; Force: -- N
-  </div>
+  <h2>E-DriveCore Real-Time Data</h2>
 
-  <div id="chartContainer">
-    <canvas id="myChart"></canvas>
-  </div>
+  <div class="counter">Total Cycles: <span id="total">0</span></div>
+  <div class="counter">OK Count: <span id="ok">0</span></div>
+  <div class="counter">NG Count: <span id="ng">0</span></div>
 
+  <p id="readings">Distance: -- mm | Force: -- N</p>
 
-  <script>
-    
-  const ctx = document.getElementById("myChart").getContext("2d");
+  <canvas id="chart"></canvas>
 
-  const chart = new Chart(ctx, {
+<script>
+  // Counters
+  let total = 0, ok = 0, ng = 0;
+
+  const totalEl = document.getElementById("total");
+  const okEl = document.getElementById("ok");
+  const ngEl = document.getElementById("ng");
+
+  // Chart
+  const chart = new Chart(document.getElementById("chart"), {
     type: "line",
     data: {
       labels: [],
       datasets: [
-        {
-          label: "Distance (mm)",
-          borderColor: "green",
-          backgroundColor: "rgba(0,128,0,0.1)",
-          data: [],
-          yAxisID: "y1",
-        },
-        {
-          label: "Force (N)",
-          borderColor: "purple",
-          backgroundColor: "rgba(128,0,128,0.1)",
-          data: [],
-          yAxisID: "y2",
-        },
-      ],
+        { label: "Distance (mm)", data: [], borderColor: "green", yAxisID: "y1" },
+        { label: "Force (N)", data: [], borderColor: "purple", yAxisID: "y2" }
+      ]
     },
     options: {
       responsive: true,
       scales: {
-        y1: {
-          type: "linear",
-          position: "left",
-          title: { display: true, text: "Distance (mm)" },
-        },
-        y2: {
-          type: "linear",
-          position: "right",
-          title: { display: true, text: "Force (N)" },
-          grid: { drawOnChartArea: false },
-        },
-      },
-    },
-  });
-
-  // Counters
-  let totalCount = 0;
-  let okCount = 0;
-  let ngCount = 0;
-
-  const totalEl = document.getElementById("totalCount");
-  const okEl = document.getElementById("okCount");
-  const ngEl = document.getElementById("ngCount");
-
-    // ✅ Connect to MQTT Broker
-    const client = mqtt.connect('ws://test.mosquitto.org:8080/ws');
-    client.on('connect', () => {
-      console.log("✅ Connected to MQTT Broker");
-      client.subscribe("tox/press/data");
-    });
-
-    client.on("message", (topic, message) => {
-    try {
-      const data = JSON.parse(message.toString());
-      console.log("📩 Received:", data);
-
-      // --- Counting logic ---
-      totalCount++;
-     if (data.processOK || data.qualityOK) okCount++;
-     if (data.processNOK || data.qualityNOK) ngCount++;
-
-      // Update counter display
-      totalEl.innerText = totalCount;
-      okEl.innerText = okCount;
-      ngEl.innerText = ngCount;
-
-      // --- Chart Update ---
-      if (typeof data.distance !== "undefined" && typeof data.force !== "undefined") {
-        const time = new Date().toLocaleTimeString();
-        chart.data.labels.push(time);
-        chart.data.datasets[0].data.push(data.distance);
-        chart.data.datasets[1].data.push(data.force);
-
-        // Keep last 10 points only
-        if (chart.data.labels.length > 10) {
-          chart.data.labels.shift();
-          chart.data.datasets[0].data.shift();
-          chart.data.datasets[1].data.shift();
-        }
-
-        chart.update();
-
-        document.getElementById("readings").innerText =
-          `Distance: ${data.distance.toFixed(2)} mm | Force: ${data.force.toFixed(2)} N`;
+        y1: { type: "linear", position: "left" },
+        y2: { type: "linear", position: "right", grid: { drawOnChartArea: false } }
       }
-    } catch (e) {
-      console.error("❌ Invalid JSON", e);
     }
   });
-  </script>
+
+  // MQTT (SECURE for GitHub Pages)
+  const client = mqtt.connect("wss://test.mosquitto.org:8081/mqtt");
+
+  client.on("connect", () => {
+    console.log("✅ MQTT Connected");
+    client.subscribe("tox/press/data");
+  });
+
+  let lastCycleId = null;
+
+  client.on("message", (topic, message) => {
+    const data = JSON.parse(message.toString());
+    console.log("📩", data);
+
+    // Prevent double-counting
+    if (data.cycleId && data.cycleId === lastCycleId) return;
+    lastCycleId = data.cycleId;
+
+    total++;
+    if (data.processOK) ok++;
+    if (data.processNOK) ng++;
+
+    totalEl.textContent = total;
+    okEl.textContent = ok;
+    ngEl.textContent = ng;
+
+    if (data.distance && data.force) {
+      const time = new Date().toLocaleTimeString();
+      chart.data.labels.push(time);
+      chart.data.datasets[0].data.push(data.distance);
+      chart.data.datasets[1].data.push(data.force);
+
+      if (chart.data.labels.length > 10) {
+        chart.data.labels.shift();
+        chart.data.datasets.forEach(d => d.data.shift());
+      }
+
+      chart.update();
+
+      document.getElementById("readings").innerText =
+        `Distance: ${data.distance.toFixed(2)} mm | Force: ${data.force.toFixed(2)} N`;
+    }
+  });
+</script>
+
 </body>
 </html>
