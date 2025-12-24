@@ -1,6 +1,6 @@
 // MQTT Broker & Topic
-const mqttBroker = 'wss://broker.hivemq.com:8884/mqtt';
-const topic = 'sensors/data';
+const broker = "ws://test.mosquitto.org:8080/ws"; // MQTT broker
+const topic = "tox/press/data";                    // Topic name
 
 // Connect to MQTT
 const client = mqtt.connect(mqttBroker);
@@ -103,5 +103,6 @@ function updateChart(distance, force, label) {
   chart.data.datasets[1].data = forceData;
   chart.update();
 }
+
 
 
