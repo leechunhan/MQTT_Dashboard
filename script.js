@@ -1,9 +1,9 @@
 // MQTT Broker & Topic
-const broker = "ws://test.mosquitto.org:8080/ws"; // MQTT broker
-const topic = "tox/press/data";                    // Topic name
+const broker = "ws://test.mosquitto.org:8080/ws"; 
+const topic = "tox/press/data";                    
 
 // Connect to MQTT
-const client = mqtt.connect(mqttBroker);
+const client = mqtt.connect(broker);
 
 // Chart Data Arrays
 let distanceData = [];
@@ -103,6 +103,7 @@ function updateChart(distance, force, label) {
   chart.data.datasets[1].data = forceData;
   chart.update();
 }
+
 
 
 
