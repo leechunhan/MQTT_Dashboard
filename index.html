@@ -63,8 +63,8 @@
 
   // MQTT (SECURE for GitHub Pages)
   //const client = mqtt.connect("wss://test.mosquitto.org:8081/mqtt");
-  const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
-
+  //const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
+    const client = mqtt.connect("wss://172.30.30.12:8080/mqtt");
   client.on("connect", () => {
     console.log("✅ MQTT Connected");
     client.subscribe("tox/press/data");
@@ -109,4 +109,5 @@
 
 </body>
 </html>
+
 
