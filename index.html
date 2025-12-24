@@ -43,7 +43,7 @@
 
 
 
-</script>
+
 
 
 </head>
@@ -119,8 +119,14 @@
   const okEl = document.getElementById("okCount");
   const ngEl = document.getElementById("ngCount");
 
-    // ✅ Connect to MQTT Broker
-    const client = mqtt.connect('ws://test.mosquitto.org:8080/ws');
+   // ✅ HiveMQ WSS connection (GitHub Pages compatible)
+  const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
+    clientId: 'tox_dashboard_' + Math.random().toString(16).substr(2, 8),
+    clean: true,
+    reconnectPeriod: 1000
+  });
+   
+
     client.on('connect', () => {
       console.log("✅ Connected to MQTT Broker");
       client.subscribe("tox/press/data");
