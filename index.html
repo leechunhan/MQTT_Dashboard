@@ -62,13 +62,17 @@
   });
 
   // MQTT (SECURE for GitHub Pages)
-  const client = mqtt.connect('wss://y1801220.ala.asia-southeast1.emqxsl.com:8084/mqtt', {
-  clientId: 'web_' + Math.random().toString(16).substr(2, 8),
-  username: 'admin',
-  password: 'admin',
-  clean: true,
-  connectTimeout: 4000
-});
+  const client = mqtt.connect(
+      "wss://y1801220.ala.asia-southeast1.emqxsl.com:8084/mqtt",
+      {
+        clientId: "web_test_" + Math.random().toString(16).substr(2, 8),
+        username: "admin",
+        password: "admin",
+        clean: true,
+        connectTimeout: 5000,
+        reconnectPeriod: 0
+      }
+    );
 
   client.on("connect", () => {
     console.log("✅ MQTT Connected");
@@ -114,3 +118,4 @@
 
 </body>
 </html>
+
